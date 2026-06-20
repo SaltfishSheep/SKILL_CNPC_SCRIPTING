@@ -17,25 +17,47 @@ features (Java interop via `Java.type()`, native MC access via `getMC*()`, Java 
 - **Only NPC events** — no Player, Block, Item, or other script types
 - **No function name mapping** — each event is hardcoded to a specific sub-script box
 - **Full-script eval** — the entire script is `eval()`'d each time. The following
-  variables are injected into scope: `world` (IWorld), `npc` (ICustomNpc), `event`
-  (event-specific type), and event-dependent extras like `player`, `dialog`, `target`.
+  variables are injected as **separate scope variables** (NOT fields of `event`):
+  `world` (ScriptWorld), `npc` (ScriptNpc), `event` (event-specific type), and
+  event-dependent extras like `player`, `dialog`, `target`, `entity`.
+  Access them directly: `player.sendMessage(...)`, not `event.player.sendMessage(...)`.
 - No function definitions — code runs top-to-bottom
 
 ### Sub-slot → 1.8+ Equivalent
 
-| 1.7 Slot | 1.8+ equivalent | Fires every |
-|---|---|---|
-| 运行 (Run) | `init` | Once on load |
-| 更新 (Update) | `tick` | 10 ticks (0.5s) |
-| 对话 1 (Interact) | `interact` | Right-click NPC |
-| 对话 2 (Dialog) | `dialog` | Dialog GUI opens (injects `player`, `dialog`) |
-| 伤害 (Damage) | `damaged` | NPC takes damage. `event` is `ScriptEventDamaged` — methods: `getDamage()`/`setDamage()` (float), `getSource()` (ScriptLivingBase), `getType()` (String), `getClearTarget()`/`setClearTarget()` (boolean) |
-| Killed | `died` | NPC dies |
-| Attack | `meleeAttack` + `rangedAttack` | NPC attacks. `event` is `ScriptEventAttack` — methods: `getTarget()` (ScriptLivingBase), `getDamage()`/`setDamage()` (float), `isRanged()` (boolean) |
-| Target | `target` | NPC acquires target. `event` is `ScriptEventTarget` — methods: `getTarget()`/`setTarget()` (ScriptLivingBase) |
-| Collide | `collide` | Entity collision (injects `entity`) |
-| Kills | `kill` | NPC kills entity (injects `target`) |
-| Dialog Closed | `dialogClose` | Option selected or dialog closes (injects `player`, `dialog`, `option`) |
+| 1.7 Slot | 1.8+ equivalent | Fires every | Injected Fields |
+|---|---|---|---|
+| 运行 (Run) | `init` | Once on load | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| 更新 (Update) | `tick` | 10 ticks (0.5s) | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| 对话 1 (Interact) | `interact` | Right-click NPC | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer` |
+| 对话 2 (Dialog) | `dialog` | Dialog GUI opens | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int` |
+| 伤害 (Damage) | `damaged` | NPC takes damage | `event: ScriptEventDamaged`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Killed | `died` | NPC dies | `event: ScriptEventKilled`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Attack | `meleeAttack` + `rangedAttack` | NPC attacks | `event: ScriptEventAttack`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Target | `target` | NPC acquires target | `event: ScriptEventTarget`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Collide | `collide` | Entity collision | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `entity: ScriptEntity` |
+| Kills | `kill` | NPC kills entity | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `target: ScriptLivingBase` |
+| Dialog Closed | `dialogClose` | Option selected or dialog closes | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int`, `option: int` |
+
+### Event-Specific Methods
+
+All event types extend `ScriptEvent`. The base class provides:
+
+| Method | Purpose |
+|---|---|
+| `isCancelled()` | Returns `boolean` — whether the event is cancelled |
+| `setCancelled(boolean bo)` | Cancels or uncancels the event |
+
+Subclasses inherit these and add their own methods:
+
+| Event Type | Additional Methods |
+|---|---|
+| `ScriptEventDamaged` (Damage) | `getDamage()`/`setDamage(float)`, `getSource()` → ScriptLivingBase, `getType()` → String, `getClearTarget()`/`setClearTarget(boolean)` |
+| `ScriptEventKilled` (Killed) | `getSource()` → ScriptLivingBase, `getType()` → String |
+| `ScriptEventAttack` (Attack) | `getTarget()` → ScriptLivingBase, `getDamage()`/`setDamage(float)`, `isRanged()` → boolean |
+| `ScriptEventTarget` (Target/TargetLost) | `getTarget()`/`setTarget(ScriptLivingBase)` |
+| `ScriptEventDialog` (Dialog/DialogClosed) | `isClosing()` → boolean |
+| `ScriptEvent` (Parent type) | *(no additional event methods)* |
 
 ### Dialog Gotcha
 
@@ -119,22 +141,23 @@ CustomNPC+ fixes storeddata reliability.
 
 ## Common Patterns
 
-All 1.7.x scripts are placed in sub-slots, not function definitions.
+All 1.7.x scripts are placed in sub-slots, not function definitions. **Injected variables
+are standalone** (e.g., `player`, `world`, `dialog`, `entity`, `target`), not fields of `event`.
 
-### Interaction (Dialogue 1 sub-slot)
+### Interaction (Interact sub-slot, 对话第一个槽位)
 
 ```javascript
 npc.say("Hello, traveler!");
-event.player.sendMessage("Welcome!");
+player.sendMessage("Welcome!");
 ```
 
-### Damage handling (Damage sub-slot)
+### Damage handling (Damage sub-slot, 伤害)
 
 ```javascript
-if (event.damage > 5) {
-    npc.say("That hurt! Damage: " + event.damage);
+if (event.getDamage() > 5) {
+    npc.say("That hurt! Damage: " + event.getDamage());
 }
-if (event.damage > 100) {
+if (event.getDamage() > 100) {
     event.setCancelled(true);  // cancel the damage (double 'l')
 }
 ```

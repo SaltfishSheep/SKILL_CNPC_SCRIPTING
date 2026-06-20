@@ -313,13 +313,12 @@ exists for that specific event.** Read `references/event-fields.md` for the fiel
 and cross-check with the fetched JavaDoc. Never assume a field exists — events like
 `damaged` have `e.source` but NO `e.player`.
 
-#### Delegation: use subagents when possible
+#### Delegation: use parallel processing when possible
 
-API document fetching is slow and token-intensive. **If your platform supports spawning
-subagents or background workers (especially low-cost models designed for research), use
-them.** Delegate each API doc fetch to a subagent — this offloads the token cost from
-the main context and can fetch multiple pages in parallel. Launch the subagent(s) and
-continue other work while they run.
+API document fetching is slow and token-intensive. **If your platform supports parallel
+processing or delegation features, use them to fetch documentation concurrently.**
+This offloads token cost from the main conversation and allows fetching multiple pages
+at once. Continue other work while fetches run in parallel.
 
 #### If the API fetch fails (timeout / unreachable)
 
