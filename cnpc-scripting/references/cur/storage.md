@@ -33,25 +33,26 @@ var name = npc.storeddata.get("key");
 - **Lifetime:** Persists across world reloads, server restarts, and entity death.
   Storeddata is stable on all entity types.
 
-- **1.7.10 warning:** On standard 1.7.10, storeddata is **unreliable** — data can be
-  lost in various situations. CustomNPC+ has fixed this. For long-term persistence on
-  standard 1.7.10, consider using file I/O as an alternative.
 - **Use for:** Quest progress, persistent flags, counters, player-specific settings.
 
 ## NBT — Two distinct access patterns
 
-> **Standard 1.7.x does NOT support NBT access.** Only 1.8+ and CustomNPC+ can use NBT.
-
-CNPC exposes NBT through two different method families. They look similar but behave
-very differently.
-
 ### getNbt() — Semi-persistent NBT Tag (read/write)
 
+In version 1.18.2+, the setter named put. In version 1.16.5-, it named set.
+Here's sample.
+
 ```javascript
-var nbt = npc.getNbt();
 // or: item.getNbt()
+var nbt = npc.getNbt();
+
+// In 1.18+
 nbt.putString("customKey", "value");
 nbt.putInteger("score", 100);
+// In 1.16-
+nbt.setString("customKey", "value");
+nbt.setInteger("score", 100);
+
 var val = nbt.getString("customKey");
 ```
 

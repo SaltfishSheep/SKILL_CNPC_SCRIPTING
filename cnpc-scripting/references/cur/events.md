@@ -1,8 +1,8 @@
-# Event Fields Reference
+# CNPC 1.8+ Event System Reference
 
-Before using any event field, **always fetch the specific event's JavaDoc page** for the
-user's version. This table is based on 1.12.2 JavaDoc — fields may differ slightly
-across versions.
+This file is the **complete, authoritative reference** for 1.8+ events: function-name
+mapping, event fields, container rules, and cancellation. For 1.7.x, see
+`references/old/events.md` instead.
 
 ## Naming Convention
 
@@ -45,16 +45,12 @@ methods are always callable on `e`:
 | `hasResult()` | `boolean` | Whether the event has a result |
 | `isCancelable()` | `boolean` | Whether the event can be cancelled (1.8+ only — 1.7 has no such method) |
 | `isCanceled()` | `boolean` | Whether the event is currently cancelled |
-| `setCanceled(cancel)` | `void` | Cancel/uncancel (1.8+, single 'l') |
-| `setCancelled(cancel)` | `void` | Cancel/uncancel (1.7.x, double 'l') |
+| `setCanceled(cancel)` | `void` | Cancel/uncancel |
 | `setPhase(phase)` | `void` | Set the event phase |
 | `setResult(result)` | `void` | Set the event result |
 
 **Cancelling events:** Do NOT `return false` — return values from event functions are
-ignored by CNPC. Use `e.setCanceled(true)` (1.8+) or `e.setCancelled(true)` (1.7.x).
-
-**1.7.x note:** 1.7 events are always cancelable — `isCancelable()` does not exist.
-Call `setCancelled(true)` directly without checking.
+ignored by CNPC. Use `e.setCanceled(true)`.
 
 **1.8+ note:** Check `e.isCancelable()` first — some events cannot be cancelled.
 
@@ -65,13 +61,156 @@ function damaged(e) {
         e.setCanceled(true);  // cancel the damage
     }
 }
-
-// 1.7.x cancellation:
-// Events are always cancelable, no isCancelable() check needed.
-function damaged(e) {
-    e.setCancelled(true);  // note double 'l'
-}
 ```
+
+## Event → Function Name Mapping
+
+In 1.8+, the Java layer passes events to JavaScript functions with **specific names**.
+The function name is derived from the event class name by stripping the "Event" suffix
+and converting to lowerCamelCase. This mapping is consistent across all 1.8+ versions.
+
+**Important:** old API docs (kodevelopment.nl) may contain mapping errors.
+Always use the mapping below, never infer function names from doc page text.
+
+| Event Class | Function Name | Script Container |
+|---|---|---|
+| **BlockEvent** | | Block |
+| BlockEvent.BreakEvent | `broken` | Block |
+| BlockEvent.ClickedEvent | `clicked` | Block |
+| BlockEvent.CollidedEvent | `collide` | Block |
+| BlockEvent.DoorToggleEvent | `doorToggle` | Block |
+| BlockEvent.ExplodedEvent | `exploded` | Block |
+| BlockEvent.FallenUponEvent | `fallenUpon` | Block |
+| BlockEvent.HarvestedEvent | `harvested` | Block |
+| BlockEvent.InitEvent | `init` | Block |
+| BlockEvent.InteractEvent | `interact` | Block |
+| BlockEvent.NeighborChangedEvent | `neighborChanged` | Block |
+| BlockEvent.RainFillEvent | `rainFilled` | Block |
+| BlockEvent.RedstoneEvent | `redstone` | Block |
+| BlockEvent.TimerEvent | `timer` | Block |
+| BlockEvent.TickEvent | `tick` | Block |
+| **CustomGuiEvent** | | *No dedicated container (see below)* |
+| CustomGuiEvent.ButtonEvent | `customGuiButton` | Parent container |
+| CustomGuiEvent.CloseEvent | `customGuiClosed` | Parent container |
+| CustomGuiEvent.ScrollEvent | `customGuiScroll` | Parent container |
+| CustomGuiEvent.SlotClickedEvent | `customGuiSlotClicked` | Parent container |
+| CustomGuiEvent.SlotEvent | `customGuiSlot` | Parent container |
+| **DialogEvent** (Player scripts only) | | Player |
+| DialogEvent.CloseEvent | `dialogClose` | Player |
+| DialogEvent.DialogEvent | `dialog` | Player |
+| DialogEvent.OptionEvent | `dialogOption` | Player |
+| **ForgeEvent** | | Forge |
+| ForgeEvent.WorldEvent | *(varies)* | Forge |
+| **WorldEvent** | | World |
+| WorldEvent.ScriptCommandEvent (1.12.2) | `scriptCommand` | World |
+| WorldEvent.ScriptTriggerEvent (1.18+) | `trigger` | World |
+| **ItemEvent** | | Item |
+| ItemEvent.AttackEvent | `attack` | Item |
+| ItemEvent.InitEvent | `init` | Item |
+| ItemEvent.InteractEvent | `interact` | Item |
+| ItemEvent.PickedUpEvent | `pickedUp` | Item |
+| ItemEvent.SpawnEvent | `spawn` | Item |
+| ItemEvent.TossedEvent | `toss` | Item |
+| ItemEvent.TickEvent | `tick` | Item |
+
+**ItemEvent behavior notes:**
+- `tick` — only fires when the item is **in a player's inventory** (every 10 ticks).
+- `interact` — fires on right-click with the item (air, block, or entity).
+- `attack` — fires on left-click with the item (air, block, or entity).
+- `toss` — fires when the player throws the item on the ground. Cancelling prevents the item from appearing in the world, but it still leaves the inventory.
+- `spawn` — fires when a scripted item entity spawns into the world.
+- `pickedUp` — fires when a player picks up the scripted item.
+
+| Event Class | Function Name | Script Container |
+|---|---|---|
+| **NpcEvent** | | NPC |
+| NpcEvent.CollideEvent | `collide` | NPC |
+| NpcEvent.DamagedEvent | `damaged` | NPC |
+| NpcEvent.DiedEvent | `died` | NPC |
+| NpcEvent.InitEvent | `init` | NPC |
+| NpcEvent.InteractEvent | `interact` | NPC |
+| NpcEvent.KilledEntityEvent | `kill` | NPC |
+| NpcEvent.MeleeAttackEvent | `meleeAttack` | NPC |
+| NpcEvent.RangedLaunchedEvent | `rangedLaunched` (≤1.16) / `rangedAttack` (1.18+) | NPC |
+| NpcEvent.TargetEvent | `target` | NPC |
+| NpcEvent.TargetLostEvent | `targetLost` | NPC |
+| NpcEvent.TimerEvent | `timer` | NPC |
+| NpcEvent.UpdateEvent | `tick` | NPC |
+| **PlayerEvent** | | Player |
+| PlayerEvent.AttackEvent | `attack` | Player |
+| PlayerEvent.BreakEvent | `broken` | Player |
+| PlayerEvent.ChatEvent | `chat` | Player |
+| PlayerEvent.CloseContainer | `containerClosed` | Player |
+| PlayerEvent.ContainerOpen | `containerOpen` | Player |
+| PlayerEvent.DamagedEntityEvent | `damagedEntity` | Player |
+| PlayerEvent.DamagedEvent | `damaged` | Player |
+| PlayerEvent.DiedEvent | `died` | Player |
+| PlayerEvent.FactionUpdateEvent | `factionUpdate` | Player |
+| PlayerEvent.InitEvent | `init` | Player |
+| PlayerEvent.InteractEvent | `interact` | Player |
+| PlayerEvent.KeyPressedEvent | `keyPressed` | Player |
+| PlayerEvent.KeyReleasedEvent | `keyReleased` | Player |
+| PlayerEvent.KilledEntityEvent | `kill` | Player |
+| PlayerEvent.LevelUpEvent | `levelUp` | Player |
+| PlayerEvent.LoginEvent | `login` | Player |
+| PlayerEvent.LogoutEvent | `logout` | Player |
+| PlayerEvent.PickUpEvent | `pickedUp` | Player |
+| PlayerEvent.PlaySoundEvent | `playSound` | Player |
+| PlayerEvent.RangedLaunchedEvent | `rangedLaunched` | Player |
+| PlayerEvent.TimerEvent | `timer` | Player |
+| PlayerEvent.TossEvent | `toss` | Player |
+| PlayerEvent.TickEvent | `tick` | Player |
+| **ProjectileEvent** | | *No dedicated container (see below)* |
+| ProjectileEvent.ImpactEvent | `projectileImpact` | Registered containers |
+| ProjectileEvent.TickEvent | `projectileTick` | Registered containers |
+| **QuestEvent** (Player scripts only) | | Player |
+| QuestEvent.QuestStartEvent | `questStart` | Player |
+| QuestEvent.QuestCompletedEvent | `questCompleted` | Player |
+| QuestEvent.QuestTurnedInEvent | `questTurnIn` | Player |
+| **RoleEvent** (NPC scripts only) | | NPC |
+
+### RoleEvent Details (NPC scripts only)
+
+All RoleEvent sub-types use function name `role`. The event type is determined by the NPC's current role.
+
+Summary of known RoleEvent sub-types:
+
+| Role | Event Type | Trigger | Event Fields |
+|---|---|---|---|
+| Trader (商人) | RoleEvent.TraderEvent | Click trade slot | `event.slot`, `event.currency1`, `event.currency2` |
+| Trader (商人) | RoleEvent.TradeFailedEvent | Trade failed (insufficient) | `event.slot`, `event.currency1`, `event.currency2`, `event.receiving` |
+| Follower (雇佣随从) | RoleEvent.FollowerHireEvent | Successfully hired | `event.days` |
+| Follower (雇佣随从) | RoleEvent.FollowerFinishedEvent | Hire expired | *(none extra)* |
+| Bank (储存者) | RoleEvent.BankUpgradedEvent | Upgrade storage | `event.slot` |
+| Bank (储存者) | RoleEvent.BankUnlockedEvent | Unlock storage | `event.slot` |
+| Transporter (传送师) | RoleEvent.TransporterUseEvent | Teleport to location | `event.location` |
+| Transporter (传送师) | RoleEvent.TransporterUnlockedEvent | Unlock location | *(none extra)* |
+| Mailman (信使) | RoleEvent.MailmanEvent | Send mail | `event.mail` |
+
+## Script Container Rules
+
+### Standard containers
+Most events are scoped to a specific script container type:
+- **NpcEvent** → NPC script (the NPC's own script box)
+- **PlayerEvent** → Player script (global player scripts)
+- **BlockEvent** → Block script
+- **ForgeEvent** → Forge script
+- **ItemEvent** → Item script
+- **DialogEvent** → Player script (only)
+- **QuestEvent** → Player script (only)
+- **RoleEvent** → NPC script (only)
+
+### Exception: CustomGuiEvent
+- No dedicated script container.
+- Records the container that **instantiated** the GUI at creation time.
+- When events fire, they trigger the matching function name in that single recorded container.
+- Only ONE container is recorded (the creator).
+
+### Exception: ProjectileEvent
+- No dedicated script container.
+- Call `IProjectile.enableEvents()` to register the **current** script container.
+- Multiple containers can register (all containers that called enableEvents).
+- When events fire, they trigger the matching function in ALL registered containers.
 
 ## Field Availability Rules
 
@@ -80,7 +219,7 @@ function damaged(e) {
 - The function name determines the event class. A field on `interact` may not exist on `damaged`.
 - All events expose `e.API: NpcAPI`.
 
-## Event Field Table (verified against 1.12.2 JavaDoc)
+## Event Field Table (verified against 1.12.2 JavaDoc, applies to all 1.8+ versions)
 
 | Function | Event Class | Fields |
 |---|---|---|
@@ -92,14 +231,14 @@ function damaged(e) {
 | `died` | NpcEvent.DiedEvent | `e.npc`, `e.source: IEntity` (direct source; use `e.damageSource` for root attacker), `e.type: String`, `e.damageSource: IDamageSource`, `e.droppedItems: IItemStack[]`, `e.expDropped: int`, `e.line: ILine` |
 | `kill` | NpcEvent.KilledEntityEvent | `e.npc`, `e.killed: IEntityLivingBase` |
 | `meleeAttack` | NpcEvent.MeleeAttackEvent | `e.npc`, `e.target: IEntityLivingBase`, `e.damage: float` |
-| `rangedAttack` | NpcEvent.RangedLaunchedEvent | `e.npc`, `e.target: IEntityLivingBase` |
+| `rangedLaunched` (≤1.16) / `rangedAttack` (1.18+) | NpcEvent.RangedLaunchedEvent | `e.npc`, `e.target: IEntityLivingBase` |
 | `target` | NpcEvent.TargetEvent | `e.npc`, `e.target: IEntityLivingBase` |
 | `targetLost` | NpcEvent.TargetLostEvent | `e.npc`, `e.oldTarget: IEntityLivingBase` |
 | `collide` | NpcEvent.CollideEvent | `e.npc`, `e.source: IEntity` |
 | `timer` | NpcEvent.TimerEvent | `e.npc`, `e.id: int` |
-| `role` | RoleEvent | `e.npc`, `e.player: IPlayer`, role-specific fields (see role.txt) |
+| `role` | RoleEvent | `e.npc`, `e.player: IPlayer`, role-specific fields (see RoleEvent Details above) |
 | **PlayerEvent** | | *(all inherit `e.player: IPlayer`)* |
-| `interact` | PlayerEvent.InteractEvent | `e.player` |
+| `interact` | PlayerEvent.InteractEvent | `e.player`, `e.target: Object`, `e.type: int` (0=air, 1=entity, 2=block) |
 | `attack` | PlayerEvent.AttackEvent | `e.player`, `e.type: int` |
 | `broken` | PlayerEvent.BreakEvent | `e.player`, `e.block: IBlock` |
 | `damaged` | PlayerEvent.DamagedEvent | `e.player`, `e.source: IEntity`, `e.damage: float` |
@@ -174,6 +313,34 @@ function damaged(e) {
 5. **`e.damage`** — on damage/attack events (NpcEvent + PlayerEvent): a `float`, not `int`.
 6. **`e.API`** — available on ALL events, equivalent to `NpcAPI.Instance()`.
 
+## Timer API & Handler
+
+Timers are managed via `npc.getTimers()`:
+
+| Method | Purpose |
+|---|---|
+| `start(id, ticks, repeat)` | Start timer; errors if id already active |
+| `forceStart(id, ticks, repeat)` | Start/overwrite timer with same id |
+| `stop(id)` | Stop a running timer; returns false if not found |
+| `reset(id)` | Reset timer countdown to 0 |
+| `has(id)` | Check if timer is active |
+| `clear()` | Stop all timers |
+
+**Note:** The timer event fires at `ticks + 1`, not exactly at the specified tick count.
+For example, `start(1, 99, true)` fires on tick 100, not 99.
+
+```javascript
+function init(e) {
+    // Start a repeating timer every 100 ticks (5 seconds)
+    e.npc.getTimers().start(1, 99, true);
+}
+
+function timer(e) {
+    e.npc.say("5 seconds have passed!");
+}
+```
+
 ## 1.7.x Note
 
-> For 1.7.x event fields, see `references/scripting-1.7.md`. This file covers 1.8+ only.
+> For 1.7.x, see `references/old/scripting.md` + `references/old/npc-objects.md` +
+> `references/old/storage.md` + `references/old/javadoc.md`. This file covers 1.8+ only.

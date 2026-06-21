@@ -132,3 +132,9 @@ function interact(e) {
 **Important:** NpcAPI should only be used server-side. The `createNPC(world)` method
 creates the NPC but does not spawn it — you must call additional methods to place it
 in the world. `spawnNPC(...)` handles both creation and spawning.
+
+---
+
+**Note:** This document does not guarantee that all available methods are listed.
+For a complete and up-to-date reference, always fetch the JavaDoc for the user's
+specific version. Some methods may be missing, deprecated, or version-specific.

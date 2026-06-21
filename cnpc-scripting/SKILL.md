@@ -48,8 +48,10 @@ API for interacting with NPCs, players, worlds, and items.
 
 **Required agent capabilities:** This skill requires your agent platform to support:
 - Reading bundled reference files (this skill ships with `references/` — locate them
-  relative to this SKILL.md: `versions.md`, `events.md`, `event-fields.md`, `advanced.md`,
-  `storage.md`, `npc-objects.md`, `scripting-1.7.md`, `scripting-1.8.md`)
+  relative to this SKILL.md:
+  - `common/versions.md`, `common/advanced.md`
+  - `old/scripting.md`, `old/events.md`, `old/npc-objects.md`, `old/storage.md`, `old/javadoc.md`
+  - `cur/scripting.md`, `cur/events.md`, `cur/npc-objects.md`, `cur/storage.md`, `cur/javadoc.md`)
 - Web/URL fetching to pull live JavaDoc pages for the user's target version
 - File creation for outputting `.js` script files
 
@@ -93,7 +95,7 @@ The script **must** be pure ES5 or it simply will not run.
 CNPC scripts can reach beyond the standard API into Nashorn's Java bridge and raw
 Minecraft internals. These are power tools — use them deliberately, not by default.
 
-**Full details:** `references/advanced.md` — covers:
+**Full details:** `references/common/advanced.md` — covers:
 - `Java.type()` / `Java.extend()` / `Java.super()` / `Java.to()` / `Java.from()`
 - SAM auto-conversion and JavaBean property access
 - Native MC access via `getMC*()` methods (with confirmation workflow)
@@ -106,140 +108,22 @@ Only suggest advanced features when the standard API is insufficient.
 
 > **No browser console.** `console.log()` does not exist.
 
-| Method | Version | Purpose |
-|---|---|---|
-| `print("msg")` | All | Script console dialog (silent, manual check) |
-| `npc.say("msg")` | All | Chat bubble above NPC |
-| Player messaging | Version-specific | See references: `scripting-1.7.md` (1.7.x) or `npc-objects.md` (1.8+) |
-| Broadcast | 1.8+ only | `npc.world.broadcast("msg")` |
-
-### Debugging Java exceptions
-
-Nashorn does **not** wrap Java exceptions — they are thrown as-is into JavaScript.
-A `try-catch` block will receive the raw Java exception object:
-
-```javascript
-try {
-    npc.executeCommand("badcommand");
-} catch (err) {
-    print("Java exception: " + err.getClass().getName() + " - " + err.getMessage());
-}
-```
-
-This is useful for diagnosing runtime errors. The exception's Java class name and
-message provide direct clues about what went wrong.
-
-### dump() — BetaZavr fork only
-
-The BetaZavr unofficial 1.12.2 fork provides a built-in `dump(object)` method that
-prints the full structure of any object: constructors, subclasses, all fields and
-methods (including private ones). This is invaluable for exploring unfamiliar APIs:
-
-```javascript
-function interact(e) {
-    dump(npc);  // prints full NPC object structure
-    dump(e);    // prints event object structure
-}
-```
-
-This method is **only available in the BetaZavr fork.** Do not suggest it for
-standard CNPC or Goodbird 1.20.1+ builds.
-
-## NPC Object Model
-
-ICustomNpc exposes its functionality through chainable sub-objects (`npc.getStats()`,
-`npc.getAi()`, `npc.getDisplay()`, etc.). Common pattern: `npc.getStats().setMaxHealth(200)`.
-
-Key sub-objects: Stats, Ai, Display, Inventory, Timers, Advanced, Faction, Role, Job.
-Role and Job types are identified via `getType()` combined with version-specific constants
-from `EnumRoleType` / `EnumJobType`.
-
-**Full details:** `references/npc-objects.md` — covers sub-object tables, Role/Job identification,
-Player object methods (quest/faction/teleport), and `updateClient()` / `reset()`.
-
-## Data Storage
-
-Three mechanisms, each with different trade-offs:
-- **tempdata** — HashMap-backed, any type, unstable (lost on reload/death).
-  Per-entity: each NPC has its own independent tempdata store.
-- **storeddata** — persistent, strings and numbers only. Booleans are NOT supported —
-  you must **manually convert** them to `"1"`/`"0"` or `"true"`/`"false"` strings.
-  Per-entity: each NPC/player has its own store, keys don't need player name prefixes.
-  Survives entity death, world reload, and server restart.
-  **1.7.10 warning:** storeddata is unreliable on standard 1.7.10 (CustomNPC+ fixes
-  this). For long-term storage on standard 1.7.10, consider using file I/O.
-- **NBT** — `getNbt()` (live, read/write, item=permanent, entity=semi-persistent) vs
-  `getXXNbt()` (snapshot, read-only). **Not available on standard 1.7.x.**
-
-**Full details:** `references/storage.md` — covers API usage, lifetime, type restrictions,
-and the storage decision guide.
-
-## NpcAPI — Global API Access
-
-Beyond per-NPC scripting, `NpcAPI.Instance()` (and `event.API` in handlers) provides
-world-level operations: spawn NPCs, create custom GUIs, access other dimensions, etc.
-
-**Full details:** `references/npc-objects.md` — covers access methods, key API table,
-and `spawnNPC` / `createNPC` examples.
+Output methods, exception handling, and debugging tools are documented in the
+version-specific scripting references.
 
 ## Event System
 
 CNPC has two fundamentally different event architectures: **1.7** and **1.8+**.
 Always determine the user's version first, then **lock to one version**. Once locked,
-only read reference files for that version. **If the user asks for both versions,
-refuse until they choose one. If they insist, explain why it's problematic and ask why
-they need both. Only proceed with both after their second confirmation, and declare
-that quality is not guaranteed.** Do not pre-load files for another version.
+only read reference files for that version. See [Workflow §1](#1-confirm-the-minecraft--mod-version)
+for the full version-locking policy and how to handle multi-version requests.
 
 **Quick dispatch (pick ONE, ignore the rest):**
-- **1.7.x (standard)** → `references/scripting-1.7.md`. Do not read 1.8+ scripting files.
-  `references/advanced.md` (Java interop, native MC) is version-neutral — available to 1.7.
-- **1.8+ / Goodbird 1.20.1+** → use the files listed in the §1.8+ section below.
-  Do not read `scripting-1.7.md`.
-- **CustomNPC+** → same as 1.8+ (reads like 1.8+, not 1.7). **Do NOT read
-  `references/scripting-1.7.md`.** Use `references/scripting-1.8.md` instead.
-  **If the variant is uncertain (standard vs CustomNPC+), read no version files until confirmed.**
-
-The complete event-to-function mapping and all container placement rules are in
-`references/events.md` **(1.8+ only)**. 1.7 uses hardcoded sub-slots — see
-`references/scripting-1.7.md` instead.
-
-Event fields for each function are documented in `references/event-fields.md`
-**(1.8+ only)**. 1.7 event fields are described in `references/scripting-1.7.md`.
-
-**Naming convention (1.8+):** `e` is just a conventional formal parameter name (short for
-"event"). It can be named anything — `c`, `event`, `evt` all work. The important
-thing is the function name, which determines the event class received.
-
-### 1.8+ (including 1.20.1, Goodbird): Function-name dispatch
-
-> **Applies to:** All kodevelopment.nl versions ≥1.8.9, Goodbird 1.20.1+.
-> **Key behaviors:** function-name dispatch, event fields per function, cancellable via `setCanceled(true)`.
-> **Reference files for 1.8+ usage:**
-> - `references/events.md` — full event→function mapping and container rules
-> - `references/event-fields.md` — event field table with types
-> - `references/scripting-1.8.md` — full 1.8+ scripting reference (containers, exceptions,
->   cross-script, Quest/Role events, output, cancellation, executeCommand)
-> - `references/npc-objects.md` — NPC sub-objects + Player methods + NpcAPI
-> - `references/advanced.md` — Java interop, native MC access, reflection
-> - `references/storage.md` — tempdata, storeddata, NBT patterns
->
-> For 1.7.x, read `references/scripting-1.7.md` instead.
-
-The Java mod layer dispatches events to JavaScript by **function name**. When an event
-fires, the mod looks for a function with the matching name and calls it with the event
-object: `function eventName(e) { ... }`.
-
-> **Read `references/scripting-1.8.md` for all 1.8+ event details** — container placement
-> rules, exceptions (ProjectileEvent/CustomGuiEvent), cross-script communication,
-> QuestEvent/RoleEvent specifics, output methods, cancellation, and executeCommand.
-
-### 1.7: Hardcoded sub-script slots
-
-> **Read `references/scripting-1.7.md` for all 1.7-specific details.** Only NPC events
-> exist. No function dispatch — eval-based with `world`, `npc`, and `event` injected.
-> Events cancelable via `event.setCancelled(true)` / `event.isCancelled()` (double 'l').
-> Use `player.sendMessage()`, no `world.broadcast()`. No NBT access. storeddata unreliable.
+- **1.7.x (standard)** → `old/scripting.md` + `old/events.md` + `old/npc-objects.md` + `old/storage.md` + `old/javadoc.md`
+- **1.8+ / Goodbird 1.19.2+** → `cur/scripting.md` + `cur/events.md` + `cur/npc-objects.md` + `cur/storage.md` + `cur/javadoc.md`
+- **CustomNPC+** → uses **cur conventions** (same as 1.8+). See [Workflow §1](#1-confirm-the-minecraft--mod-version) for full routing.
+- `common/advanced.md` is version-neutral — available to all versions.
+- If the variant is uncertain, read no version files until confirmed.
 
 ## Language Policy
 
@@ -279,39 +163,70 @@ especially between ≤1.18.2 and ≥1.20.1.
 
 - **1.7.10:** Always ask "Are you using standard CustomNPCs or CustomNPC+?" **If the
   version is uncertain, do NOT read any version-specific files yet — wait for confirmation.**
-  CustomNPC+ behaves like 1.8+ (function dispatch, multi-page scripts) — route to
-  `references/scripting-1.8.md` for event/container rules, and get its API docs from
-  `references/versions.md`. **Do NOT read `references/scripting-1.7.md`** for CustomNPC+
-  — it describes 1.7 standard behavior that does not apply.
+  CustomNPC+ uses **cur conventions** (function dispatch, multi-page scripts) — route to
+  `references/cur/scripting.md` for event/container rules, and get its API docs from
+  `references/common/versions.md`. **Do NOT read `references/old/scripting.md`** for CustomNPC+
+  — it describes old-convention behavior that does not apply.
 
 - **1.12.2:** Always ask "Are you using the standard CustomNPCs or the BetaZavr unofficial
   fork?" BetaZavr's fork adds built-in deobfuscation, `dump()` debugging, client-side
-  scripts, and expanded data storage.
+  scripts, and expanded data storage. BetaZavr also has an experimental 1.20.1 version.
 
 If the user is on a non-standard version (CustomNPC+, BetaZavr), **warn them explicitly:**
 *"我对这个非正统版本的支持较弱，会尽量以正统版本的代码为准，可能无法完全兼容。"*
 
 Standard versions: Noppes's official builds (all kodevelopment.nl versions) and
-Goodbird's 1.20.1+ unofficial port. Non-standard: CustomNPC+, BetaZavr fork.
+Goodbird's 1.19.2+ unofficial port. Non-standard: CustomNPC+, BetaZavr fork.
 
 If the user doesn't know their version, ask about their modpack or Forge version as a clue.
 Do NOT guess the version unless the user explicitly says it's fine.
 
-### 2. Look up the API doc URL
+### 2. Load the version-specific scripting reference — CRITICAL, NO DELEGATION
 
-Read `references/versions.md` to find the matching documentation URL.
+**Immediately after version confirmation, you MUST read the corresponding `scripting.md`
+file yourself (in the main agent context), in full, before proceeding to any other step.**
+
+| Confirmed version | File to load |
+|---|---|
+| 1.7.x (standard) | `references/old/scripting.md` |
+| 1.8+ / Goodbird 1.19.2+ | `references/cur/scripting.md` |
+| CustomNPC+ (1.7.10 fork) | `references/cur/scripting.md` |
+
+**This file must be loaded directly by the main agent — NOT via delegation to a
+sub-agent, explorer, librarian, or any other specialist.** The scripting reference
+contains version-specific event models, setup instructions, critical quirks, and
+cross-references to other reference files. A summarized or paraphrased version from
+a sub-agent will lose structural details (e.g., 1.7.x's eval-based sub-slot model vs
+1.8+'s function-name dispatch) and cause the agent to generate scripts with the wrong
+architecture.
+
+**Why this cannot be delegated:**
+- `scripting.md` defines the **event system paradigm** for the version — the difference
+  between bare eval code in sub-slots (1.7.x) and named function handlers (1.8+). A
+  summary cannot preserve this distinction with enough fidelity.
+- It contains **cross-references** to events.md, npc-objects.md, storage.md, and javadoc.md
+  that the main agent needs to follow in subsequent steps.
+- It includes **version-specific quirks** (e.g., 1.7.x's `setCancelled` with double 'l',
+  `getHeldItem()` vs `getMainhandItem()`) that a sub-agent summary may omit.
+
+**After loading scripting.md**, follow its internal pointers to load additional reference
+files (events.md, npc-objects.md, etc.) as needed — these may be loaded by the main agent
+or delegated, since scripting.md provides the authoritative routing context.
+
+### 3. Look up the API doc URL
+
+Read `references/common/versions.md` to find the matching documentation URL.
 Pick the closest match (e.g., 1.12.0 → use 1.12.2 docs).
 
-### 3. Fetch the relevant API documentation
+### 4. Fetch the relevant API documentation
 
 **Never rely on memorized API knowledge.** The CNPC API varies by version, and memorized
 methods are often wrong or outdated. Always fetch the live documentation for the user's
 specific version before writing any code that calls CNPC API methods.
 
-**Before using any event field (e.g., `e.player`, `e.damage`, `e.source`), verify it
-exists for that specific event.** Read `references/event-fields.md` for the field table,
-and cross-check with the fetched JavaDoc. Never assume a field exists — events like
-`damaged` have `e.source` but NO `e.player`.
+**Before using any event field, verify it exists for that specific event and version.**
+Read the version-specific event reference and cross-check with the fetched JavaDoc.
+Never assume a field exists.
 
 #### Delegation: use parallel processing when possible
 
@@ -348,99 +263,75 @@ Don't fetch the entire JavaDoc site — only the classes/methods relevant to the
 - For inventory/items: look for item stack APIs
 
 When the user's task is vague, fetch the main package index first to identify relevant classes,
-then drill down. Common entry points:
-- `noppes.npcs.api.INpc` — the NPC object
-- `noppes.npcs.api.event.*` — event types (InteractEvent, DamagedEvent, TickEvent, etc.)
-- `noppes.npcs.api.IPlayer` — the player object
-- `noppes.npcs.api.IWorld` — the world object
+then drill down. See the **JavaDoc Class Reference** section in the version-specific
+scripting reference for a complete list of common classes and their package paths.
 
-**For 1.20.1+**: the docs are on GitHub Pages (Goodbird's unofficial docs).
+**For 1.19.2+ (Goodbird)**: the docs are on GitHub Pages (Goodbird's unofficial docs).
 They use a different structure. Navigate via the sidebar topics, not JavaDoc package paths.
 
-### 4. Write the script and guide placement
+### 5. Write the script and guide placement
 
 Once the API context is loaded, write the script. For new users, cover setup first.
 
 #### First-time setup
 
-**Always remind new users of these three things:**
+**Always remind new users:**
 
 1. **Enable the script:** The script editor has an "开启" (Enable) toggle — it defaults
    to "否" (No). Remind the user: *"在脚本框页面，将'开启'选项调为'是'，否则脚本不会运行。"*
    This is the #1 reason scripts don't work for new users.
 
-2. **Nashorn.jar (1.7.x only):** For 1.7.x, the user must copy `nashorn.jar` from their
-   Java installation (`jre/lib/ext/nashorn.jar` or `jdk/jre/lib/ext/nashorn.jar`) into
-   the `mods/` folder. 1.8+ versions auto-detect Nashorn or get it from Forge — no
-   manual install needed.
-
-3. **Language setting (1.7.x only):** In the script editor, set "语言 (Language)" to
-    "ECMAScript". 1.8+ versions default to ECMAScript automatically.
+2. **Version-specific setup:** 1.7.x requires manual Nashorn.jar installation and language
+   setting. 1.8+ handles this automatically. See the version-specific scripting reference
+   for details.
 
 #### Script deployment — CRITICAL
 
-**Scripts are NOT files on disk. Do NOT tell users to place `.js` files in folders or
-"link" scripts.** CNPC scripts are pasted directly into the game's UI editor:
-
-- **1.8+:** Open the script container (NPC/Player/Block/Item etc.) → select or create a
-  script page → paste code into the text area.
-- **1.7:** Open the NPC script editor → click into the matching sub-slot tab → paste
-  code into the text area.
-
+**Scripts are NOT files on disk.** CNPC scripts are pasted directly into the game's UI editor.
 Never reference file paths, directories, or "linking" when giving deployment instructions.
-The user pastes the code directly into the in-game text editor.
 
 #### Script writing conventions
 
-> **1.8+:** read `references/scripting-1.8.md` for full conventions.
-> **1.7.x:** read `references/scripting-1.7.md` — eval-based, sub-slots, no function definitions.
-
-- Use `var` for variables to maintain state across function calls.
-- Event handler signatures: `function interact(e)`, `function tick(e)`, `function damaged(e)`, etc.
-- The global `npc` variable gives access to the NPC running the script.
-- Event fields vary by event type — **always check `references/event-fields.md`** before
-  using `e.player`, `e.source`, `e.damage`, etc. Not all events have the same fields.
-
-#### NPC command execution — executeCommand()
-
-NPCs can run server commands via `npc.executeCommand("command string")`.
-Returns the command's output as a string. **Full details, config requirements,
-and security warnings:** `references/scripting-1.8.md`.
+> Read the version-specific scripting reference for full conventions (variable scoping,
+> NPC access patterns, event handler signatures, etc.).
 
 Always explain what the script does and reference the specific API methods being used,
 so the user understands the code, not just copies it.
-
-## Common Patterns
-
-> **1.8+:** See `references/scripting-1.8.md` for interact, damaged, timer, tick examples.
-> **1.7.x:** See `references/scripting-1.7.md` for sub-slot based interaction, damage, tick examples.
-
-### Quick reference: cancellation
-
-Do NOT `return false` — use `e.setCanceled(true)` (1.8+) or `e.setCancelled(true)` (1.7.x, double 'l').
-1.8+: check `e.isCancelable()` first. 1.7.x: events always cancelable.
 
 ## Important Notes
 
 - **Nashorn / ES5**: all versions use Nashorn. See the Critical section above for syntax restrictions.
 - CNPC scripting is single-threaded per NPC. Avoid blocking operations (infinite loops, synchronous waits).
-- 1.20.1+ uses a completely rewritten scripting system with different package names.
+- 1.19.2+ (Goodbird) uses a completely rewritten scripting system with different package names.
 - API methods return Java objects — use them as-is, don't try to JSON-stringify or deep-clone them.
-- `npc.executeCommand("cmd")` runs server commands and returns output. Requires
-  `enable-command-block=true` in `server.properties`. For OP commands, also set
-  `NpcUseOpCommands=true` in `CustomNPCs.cfg` (security risk — warn the user).
-- Messages to players: 1.8+ uses `player.message()` (primary). 1.7.x specifics are in
-  `references/scripting-1.7.md`.
 - Test scripts in a local single-player world before deploying to a server.
-- **Script deployment:** Code is pasted into the in-game UI editor, NOT placed as files
-  on disk. Never tell users to put scripts in folders or "link" them.
+- **`executeCommand()`:** Requires `enable-command-block=true` in `server.properties`.
+  For OP commands, also set `NpcUseOpCommands=true` in `CustomNPCs.cfg` (security risk).
+  1.8+ returns output as string; 1.7.x returns void. See version-specific scripting reference.
 
 ### Non-Standard Version Support
 
-CustomNPC+ (1.7.10) and BetaZavr (1.12.2) are unofficial forks with extended APIs.
-When the user is on one of these versions:
-1. Warn that support is limited: *"我对这个非正统版本的支持较弱，会尽量以正统版本的代码为准"*
-2. Try to match standard CNPC API patterns where possible
-3. Prefer the fork's own documentation over standard CNPC JavaDocs
-Goodbird's 1.20.1+ port is **not** considered non-standard — it is the official
-continuation for modern Minecraft versions.
+CustomNPC+ and BetaZavr are unofficial forks — see [Workflow §1](#1-confirm-the-minecraft--mod-version)
+for confirmation steps and warning policy. Goodbird's 1.19.2+ port is **not** non-standard.
+
+## Version Routing
+| Version | Reference Files |
+|---|---|
+| 1.7.x (standard) | `old/scripting.md`, `old/events.md`, `old/npc-objects.md`, `old/storage.md`, `old/javadoc.md` |
+| 1.8+ / Goodbird 1.19.2+ | `cur/scripting.md`, `cur/events.md`, `cur/npc-objects.md`, `cur/storage.md`, `cur/javadoc.md` |
+| CustomNPC+ (1.7.10 fork) | Use **cur** files (same as 1.8+) |
+| Advanced features | `common/advanced.md` (version-neutral) |
+| Java Doc fetching | Always fetch live docs for the user's specific version; use `common/versions.md` to find URLs |
+
+## Common Output Methods
+| Method | 1.7.x | 1.8+ | description |
+|---|---|---|---|
+| `print("msg")` | ✅ | ✅ | Prints a message to the console, which is silent, only visible in in-game script gui |
+| `npc.say("msg")` | ✅ | ✅ | Makes the NPC say a message |
+| `player.sendMessage("msg")` | ✅ | ❌ | Sends a message to the player (1.7.x only) |
+| `player.message("msg")` | ❌ | ✅ | Sends a message to the player (1.8+ only) |
+| `npc.world.broadcast("msg")` | ❌ | ✅ | Broadcasts a message to the entire world (1.8+ only) |
+
+## Configuration for Sub-Users
+
+For some variables and configurations that sub-users can modify, you can put them in the global variables section at the very beginning of the script and use comments to mark them as configurable.

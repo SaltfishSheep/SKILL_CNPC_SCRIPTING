@@ -8,6 +8,12 @@ raw Minecraft internals. These are power tools — use them deliberately, not by
 Nashorn provides unique JavaScript-to-Java bridging capabilities.
 These are essential for CNPC scripting because all mod APIs are Java objects.
 
+**Nashorn availability:** Nashorn was removed from the JDK in Java 15 (JEP 372). However,
+Forge includes Nashorn as a bundled dependency, so no separate installation is needed for
+standard Forge-based setups. For maximum cross-version compatibility, always write ES5
+JavaScript even if GraalJS or other modern engines are available — ES5 ensures scripts
+work identically across all CNPC versions and Java runtimes.
+
 ### Importing Java classes — Java.type()
 
 ```javascript
