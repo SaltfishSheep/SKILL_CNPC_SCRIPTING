@@ -194,4 +194,4 @@ MIT License — see [LICENSE](LICENSE).
 
 ## Skill Version History
 
-- **0.3.0** — Current version. Multi-version support, mapping tools, comprehensive reference docs.
+- **0.3.1** — Current version. Multi-version support, mapping tools, comprehensive reference docs.
