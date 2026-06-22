@@ -4,7 +4,7 @@
 Minecraft Mapping Cache Builder
 
 Builds unified mapping caches for Minecraft versions following the workflow
-described in mappings.md. Uses MCP stable versions (not snapshot) for 1.7.10-1.16.5,
+described in native-mc-access.md. Uses MCP stable versions (not snapshot) for 1.7.10-1.16.5,
 and Mojang ProGuard + TSRGv2 for 1.17+.
 
 Output: ./mapping-caches/<mc-version>.csv

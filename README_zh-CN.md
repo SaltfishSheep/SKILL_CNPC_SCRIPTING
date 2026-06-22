@@ -26,7 +26,7 @@ SKILL_CNPC_SCRIPTING/
 │   │   ├── common/                 # 版本无关的通用文档
 │   │   │   ├── versions.md         # 各版本 API 文档 URL
 │   │   │   ├── advanced.md         # Nashorn Java 互操作与原生 MC 访问
-│   │   │   └── mappings.md         # 反混淆名称解析工作流
+│   │   │   └── native-mc-access.md         # 反混淆名称解析工作流
 │   │   ├── old/                    # 1.7.x（标准版）参考文档
 │   │   │   ├── scripting.md
 │   │   │   ├── events.md

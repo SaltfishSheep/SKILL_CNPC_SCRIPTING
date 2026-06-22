@@ -26,7 +26,7 @@ SKILL_CNPC_SCRIPTING/
 │   │   ├── common/                 # Version-neutral documentation
 │   │   │   ├── versions.md         # API doc URLs for all MC versions
 │   │   │   ├── advanced.md         # Nashorn Java interop & native MC access
-│   │   │   └── mappings.md         # Deobfuscation name resolution workflow
+│   │   │   └── native-mc-access.md         # Deobfuscation name resolution workflow
 │   │   ├── old/                    # 1.7.x (standard) reference docs
 │   │   │   ├── scripting.md
 │   │   │   ├── events.md

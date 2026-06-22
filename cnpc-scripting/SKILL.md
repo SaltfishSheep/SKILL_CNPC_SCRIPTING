@@ -49,7 +49,7 @@ API for interacting with NPCs, players, worlds, and items.
 **Required agent capabilities:** This skill requires your agent platform to support:
 - Reading bundled reference files (this skill ships with `references/` — locate them
   relative to this SKILL.md:
-  - `common/versions.md`, `common/advanced.md`
+  - `common/versions.md`, `common/advanced.md`, `common/native-mc-access.md`
   - `old/scripting.md`, `old/events.md`, `old/npc-objects.md`, `old/storage.md`, `old/javadoc.md`
   - `cur/scripting.md`, `cur/events.md`, `cur/npc-objects.md`, `cur/storage.md`, `cur/javadoc.md`)
 - Web/URL fetching to pull live JavaDoc pages for the user's target version

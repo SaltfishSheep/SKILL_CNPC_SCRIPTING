@@ -136,7 +136,7 @@ Before writing any script that uses `getMC*()` or obfuscated MC names:
 4. Only proceed after explicit user confirmation. If the user hesitates, suggest
    alternative approaches (CNPC API workarounds, community scripts, simpler solutions).
 
-### Obfuscated names — read mappings.md only when necessary
+### Obfuscated names — read native-mc-access.md only when necessary
 
 In a production Minecraft environment, all vanilla class methods and fields use
 **obfuscated names** (e.g., `func_70032_d`), not the human-readable MCP names
@@ -146,7 +146,7 @@ and will **not work** as-is — it can only serve as reference for logic and str
 Obfuscated names vary across versions — a name that works on 1.12.2 will likely
 **not** work on 1.16.5 or 1.20.1.
 
-**⚠️ Only read [mappings.md](mappings.md) when you actually need to look up obfuscated
+**⚠️ Only read [native-mc-access.md](native-mc-access.md) when you actually need to look up obfuscated
 names.** The mapping lookup process is complex, involves multiple external data sources,
 and is rarely needed — the CNPC wrapper API covers most use cases. Native MC access
 via `getMC*()` has poor version compatibility and should be a last resort.
