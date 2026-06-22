@@ -181,10 +181,10 @@ Goodbird's 1.19.2+ unofficial port. Non-standard: CustomNPC+, BetaZavr fork.
 If the user doesn't know their version, ask about their modpack or Forge version as a clue.
 Do NOT guess the version unless the user explicitly says it's fine.
 
-### 2. Load the version-specific scripting reference — CRITICAL, NO DELEGATION
+### 2. Load the version-specific scripting reference — CRITICAL, FULL FIDELITY REQUIRED
 
-**Immediately after version confirmation, you MUST read the corresponding `scripting.md`
-file yourself (in the main agent context), in full, before proceeding to any other step.**
+**Immediately after version confirmation, you MUST obtain the corresponding `scripting.md`
+file in full, before proceeding to any other step.**
 
 | Confirmed version | File to load |
 |---|---|
@@ -192,15 +192,13 @@ file yourself (in the main agent context), in full, before proceeding to any oth
 | 1.8+ / Goodbird 1.19.2+ | `references/cur/scripting.md` |
 | CustomNPC+ (1.7.10 fork) | `references/cur/scripting.md` |
 
-**This file must be loaded directly by the main agent — NOT via delegation to a
-sub-agent, explorer, librarian, or any other specialist.** The scripting reference
-contains version-specific event models, setup instructions, critical quirks, and
-cross-references to other reference files. A summarized or paraphrased version from
-a sub-agent will lose structural details (e.g., 1.7.x's eval-based sub-slot model vs
-1.8+'s function-name dispatch) and cause the agent to generate scripts with the wrong
-architecture.
+**This file must be loaded with full fidelity — verbatim content, not summarized or
+paraphrased.** Delegation is allowed **only if** the sub-agent returns the complete
+file content verbatim (e.g., a file-reading tool that passes through raw text). Do NOT
+delegate to agents that summarize, compress, or paraphrase content (e.g., a research
+agent asked to "explain what this file says").
 
-**Why this cannot be delegated:**
+**Why full fidelity is required:**
 - `scripting.md` defines the **event system paradigm** for the version — the difference
   between bare eval code in sub-slots (1.7.x) and named function handlers (1.8+). A
   summary cannot preserve this distinction with enough fidelity.
@@ -335,3 +333,35 @@ for confirmation steps and warning policy. Goodbird's 1.19.2+ port is **not** no
 ## Configuration for Sub-Users
 
 For some variables and configurations that sub-users can modify, you can put them in the global variables section at the very beginning of the script and use comments to mark them as configurable.
+
+## Delegated Reference Loading
+
+After loading `scripting.md` in the main agent (mandatory, see Workflow §2), the remaining
+reference files should be loaded via **sub-agent delegation** to save main-agent context
+tokens. The sub-agent reads the full file and returns only the content relevant to the
+user's task.
+
+### Delegatable files (after version is confirmed)
+
+| Reference file | Delegate prompt template |
+|---|---|
+| `{ver}/events.md` | "Read `references/{ver}/events.md` in full. The user's task is: {task_summary}. Return: (1) the event→function mapping for events relevant to this task, (2) the field table rows for those events only, (3) any cancellation rules. Omit events and fields unrelated to the task." |
+| `{ver}/npc-objects.md` | "Read `references/{ver}/npc-objects.md` in full. The user needs to work with: {object_types}. Return: the method tables for those objects only, plus any critical gotchas. Omit unrelated object types." |
+| `{ver}/storage.md` | "Read `references/{ver}/storage.md` in full. The user needs: {storage_need}. Return: the relevant storage mechanism's API, type restrictions, and persistence behavior. Include the decision guide row matching their need." |
+| `{ver}/javadoc.md` | "Read `references/{ver}/javadoc.md` in full. The user's task involves: {api_area}. Return: the class paths for the relevant classes/packages only. Omit unrelated entries." |
+
+Where `{ver}` is `old` or `cur` based on the confirmed version.
+
+### Rules
+
+1. **`scripting.md` must NOT be delegated** — it defines the event paradigm and must be in
+   the main agent's context with full fidelity.
+2. Sub-agents must **read the file verbatim** and extract relevant portions — never summarize
+   or paraphrase API signatures, field names, or version-specific quirks.
+3. When the task is broad (e.g., "write a full NPC with combat + dialogue + storage"),
+   delegate multiple files in parallel and reconcile the results before writing code.
+4. When the task is narrow (e.g., "how do I use timers"), only delegate the single relevant
+   file — skip the rest entirely.
+5. If delegation is not available (e.g., platform limitation), fall back to main-agent
+   loading — but prefer delegation when possible to preserve context budget for code
+   generation and JavaDoc fetching.

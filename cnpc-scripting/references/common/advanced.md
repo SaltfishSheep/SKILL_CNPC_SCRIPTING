@@ -136,28 +136,20 @@ Before writing any script that uses `getMC*()` or obfuscated MC names:
 4. Only proceed after explicit user confirmation. If the user hesitates, suggest
    alternative approaches (CNPC API workarounds, community scripts, simpler solutions).
 
-### Critical: Obfuscated names, NOT MCP names
+### Obfuscated names — read mappings.md only when necessary
 
 In a production Minecraft environment, all vanilla class methods and fields use
 **obfuscated names** (e.g., `func_70032_d`), not the human-readable MCP names
 (e.g., `onUpdate`). Code from other Minecraft mods or tutorials uses MCP names
 and will **not work** as-is — it can only serve as reference for logic and structure.
 
-You may search the web for the correct obfuscated names for the user's version,
-or ask the user to provide them if they already know.
+Obfuscated names vary across versions — a name that works on 1.12.2 will likely
+**not** work on 1.16.5 or 1.20.1.
 
-### Obfuscation varies by version group
-
-The same Minecraft method has different obfuscated names across major version groups:
-
-| Version range | Obfuscation family |
-|---|---|
-| 1.12.x and below | Pre-flattening (similar within group) |
-| 1.13.x – 1.16.x | Post-flattening (similar within group) |
-| 1.17.x and above | Modern mappings (similar within group) |
-
-A method name that works on 1.12.2 will likely **not** work on 1.16.5 or 1.20.1.
-Always verify the obfuscated name for the user's specific version.
+**⚠️ Only read [mappings.md](mappings.md) when you actually need to look up obfuscated
+names.** The mapping lookup process is complex, involves multiple external data sources,
+and is rarely needed — the CNPC wrapper API covers most use cases. Native MC access
+via `getMC*()` has poor version compatibility and should be a last resort.
 
 ## Java Reflection for Private Fields and Methods
 
