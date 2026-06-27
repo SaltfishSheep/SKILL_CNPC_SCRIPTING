@@ -19,97 +19,26 @@ CNPC has a version-specific Java-backed API that cannot be guessed from general 
 SKILL_CNPC_SCRIPTING/
 ├── cnpc-scripting/
 │   ├── SKILL.md                    # Main skill definition (load this in your agent)
-│   ├── info.json                   # Version metadata
-│   ├── mapping_builder.py          # Builds mapping caches from MCP/Mojang data
-│   ├── mapping_search.py           # Searches mapping caches with boolean expressions
-│   ├── references/
-│   │   ├── common/                 # Version-neutral documentation
-│   │   │   ├── versions.md         # API doc URLs for all MC versions
-│   │   │   ├── advanced.md         # Nashorn Java interop & native MC access
-│   │   │   └── native-mc-access.md         # Deobfuscation name resolution workflow
-│   │   ├── old/                    # 1.7.x (standard) reference docs
-│   │   │   ├── scripting.md
-│   │   │   ├── events.md
-│   │   │   ├── npc-objects.md
-│   │   │   ├── storage.md
-│   │   │   └── javadoc.md
-│   │   └── cur/                    # 1.8+ / Goodbird reference docs
-│   │       ├── scripting.md
-│   │       ├── events.md
-│   │       ├── npc-objects.md
-│   │       ├── storage.md
-│   │       └── javadoc.md
-│   └── .mapping-caches/            # Generated mapping CSV files (gitignored)
-│       ├── mapping-info.json
-│       └── 1.12.2.csv
+│   └── references/
+│       ├── common/                 # Version-neutral documentation
+│       │   └── advanced.md         # Nashorn Java interop & native MC access
+│       ├── old/                    # 1.7.x (standard) reference docs
+│       │   ├── scripting.md
+│       │   ├── events.md
+│       │   ├── storage.md
+│       │   ├── constants.md
+│       │   ├── examples.md
+│       │   └── examples-storage.md
+│       └── cur/                    # 1.8+ / Goodbird reference docs
+│           ├── scripting.md
+│           ├── events.md
+│           ├── storage.md
+│           ├── constants.md
+│           ├── examples.md
+│           └── examples-storage.md
 ├── LICENSE                         # MIT License
 └── .gitignore
 ```
-
-## Installation
-
-Requires **Git 2.19+**.
-
-### Universal (shared across agents)
-
-`~/.agents/skills/` is the cross-agent standard supported by OpenCode and Codex natively. Claude Code does not support it yet (see [feature request](https://github.com/anthropics/claude-code/issues/31005)).
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
-git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
-mkdir -p ~/.agents/skills
-rm -rf ~/.agents/skills/cnpc-scripting
-mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
-rm -rf .cnpc_skill_tmp
-```
-
-### Agent-specific
-
-<details>
-<summary>OpenCode</summary>
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
-git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
-mkdir -p ~/.config/opencode/skills
-rm -rf ~/.config/opencode/skills/cnpc-scripting
-mv .cnpc_skill_tmp/cnpc-scripting ~/.config/opencode/skills/cnpc-scripting
-rm -rf .cnpc_skill_tmp
-```
-
-</details>
-
-<details>
-<summary>Claude Code</summary>
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
-git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
-mkdir -p ~/.claude/skills
-rm -rf ~/.claude/skills/cnpc-scripting
-mv .cnpc_skill_tmp/cnpc-scripting ~/.claude/skills/cnpc-scripting
-rm -rf .cnpc_skill_tmp
-```
-
-</details>
-
-<details>
-<summary>Codex</summary>
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
-git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
-mkdir -p ~/.agents/skills
-rm -rf ~/.agents/skills/cnpc-scripting
-mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
-rm -rf .cnpc_skill_tmp
-```
-
-</details>
-
-> **For AI agents:** When helping the user install this skill, ask whether they want to install to the universal ~/.agents/skills/ directory (shared across OpenCode and Codex) or to a specific agent's directory (e.g. ~/.claude/skills/ for Claude Code, ~/.config/opencode/skills/ for OpenCode, ~/.agents/skills/ for Codex). If the user only uses one agent, suggest the agent-specific path. If they use multiple agents, suggest the universal path.
-
-If your agent does not support directory-based skills, you can paste the contents of `SKILL.md` directly into your agent's custom instructions or system prompt. The agent will read the `references/` files on demand.
 
 ### Agent Capability Requirements
 
@@ -119,55 +48,6 @@ This skill requires your agent to support:
 - **File writing** — to output `.js` script files (optional, scripts are usually pasted into the game UI)
 
 No specific tool names are assumed — the skill adapts to whatever your environment provides.
-
-## Mapping Tools
-
-The skill includes Python tools for working with Minecraft's obfuscated code mappings. These are needed when scripts access Minecraft internals via `getMC*()` methods or Java reflection.
-
-### Building a Mapping Cache
-
-Generate a mapping cache for a specific Minecraft version:
-
-```bash
-cd cnpc-scripting
-python mapping_builder.py 1.12.2
-python mapping_builder.py 1.20.1
-```
-
-This downloads MCP/Mojang mapping data and produces a unified CSV at `.mapping-caches/<version>.csv`.
-
-**Supported versions:** 1.7.10, 1.8–1.11.2, 1.12.2–1.15.2, 1.16.1–1.16.5, 1.17–1.20.1
-
-### Searching a Mapping Cache
-
-Search for obfuscated names using boolean expressions:
-
-```bash
-cd cnpc-scripting
-
-# Simple search
-python mapping_search.py 1.12.2 "KeyBinding"
-
-# AND search
-python mapping_search.py 1.12.2 "Entity&Player"
-
-# OR search
-python mapping_search.py 1.12.2 "Entity|Player"
-
-# Complex expressions
-python mapping_search.py 1.12.2 "(Entity|Player)&client"
-
-# Paginated results (page 2)
-python mapping_search.py 1.12.2 "Block" 2
-```
-
-**Expression syntax:**
-| Operator | Meaning | Example |
-|----------|---------|---------|
-| `term` | Case-insensitive substring match | `KeyBinding` |
-| `&` | AND (both must match) | `Entity&Living` |
-| `\|` | OR (either must match) | `Entity\|Player` |
-| `()` | Grouping | `(a\|b)&c` |
 
 ## Version Routing
 
@@ -194,4 +74,6 @@ MIT License — see [LICENSE](LICENSE).
 
 ## Skill Version History
 
-- **0.3.1** — Current version. Multi-version support, mapping tools, comprehensive reference docs.
+- **0.4.0** — Current version. Shorter prompts. MCP tool integrated with search API.
+- **0.3.0** — A few fix.
+- **0.3.1** — Multi-version support, mapping tools, comprehensive reference docs.

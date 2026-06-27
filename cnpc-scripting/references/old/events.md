@@ -1,11 +1,11 @@
-# CNPC 1.7.x Event System Reference
+# CNPC old convention Event System Reference
 
-This file is the **complete, authoritative reference** for 1.7.x events: sub-script slots,
-event fields, and cancellation. For 1.8+, see `references/cur/events.md` instead.
+This file is the **complete, authoritative reference** for old convention events: sub-script slots,
+event fields, and cancellation. For cur convention, see `references/cur/events.md` instead.
 
 ## Event Architecture
 
-1.7.x uses **hardcoded sub-script slots**, not function-name dispatch:
+old convention uses **hardcoded sub-script slots**, not function-name dispatch:
 
 - **Only NPC events** — no Player, Block, Item, or other script types
 - **No function name mapping** — each event is hardcoded to a specific sub-script box
@@ -16,41 +16,21 @@ event fields, and cancellation. For 1.8+, see `references/cur/events.md` instead
   Access them directly: `player.sendMessage(...)`, not `event.player.sendMessage(...)`.
 - No function definitions — code runs top-to-bottom
 
-## Sub-slot → 1.8+ Equivalent
+## Sub-slot → cur convention Equivalent
 
-| 1.7 Slot | 1.8+ equivalent | Fires every | Injected Fields |
-|---|---|---|---|
-| 运行 (Run) | `init` | Once on load | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| 更新 (Update) | `tick` | 10 ticks (0.5s) | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| 对话 1 (Interact) | `interact` | Right-click NPC | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer` |
-| 对话 2 (Dialog) | `dialog` | Dialog GUI opens | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int` |
-| 伤害 (Damage) | `damaged` | NPC takes damage | `event: ScriptEventDamaged`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| Killed | `died` | NPC dies | `event: ScriptEventKilled`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| Attack | `meleeAttack` + `rangedAttack` | NPC attacks | `event: ScriptEventAttack`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| Target | `target` | NPC acquires target | `event: ScriptEventTarget`, `world: ScriptWorld`, `npc: ScriptNpc` |
-| Collide | `collide` | Entity collision | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `entity: ScriptEntity` |
-| Kills | `kill` | NPC kills entity | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `target: ScriptLivingBase` |
-| Dialog Closed | `dialogClose` | Option selected or dialog closes | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int`, `option: int` |
-
-## Event-Specific Methods
-
-All event types extend `ScriptEvent`. The base class provides:
-
-| Method | Purpose |
-|---|---|
-| `isCancelled()` | Returns `boolean` — whether the event is cancelled |
-| `setCancelled(boolean bo)` | Cancels or uncancels the event |
-
-Subclasses inherit these and add their own methods:
-
-| Event Type | Additional Methods |
-|---|---|
-| `ScriptEventDamaged` (Damage) | `getDamage()`/`setDamage(float)`, `getSource()` → ScriptLivingBase, `getType()` → String, `getClearTarget()`/`setClearTarget(boolean)` |
-| `ScriptEventKilled` (Killed) | `getSource()` → ScriptLivingBase, `getType()` → String |
-| `ScriptEventAttack` (Attack) | `getTarget()` → ScriptLivingBase, `getDamage()`/`setDamage(float)`, `isRanged()` → boolean |
-| `ScriptEventTarget` (Target/TargetLost) | `getTarget()`/`setTarget(ScriptLivingBase)` |
-| `ScriptEventDialog` (Dialog/DialogClosed) | `isClosing()` → boolean |
-| `ScriptEvent` (Parent type) | *(no additional event methods)* |
+| old convention Slot | Fires every | Injected Fields |
+|---|---|---|
+| 运行 (Run) | Once on load | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| 更新 (Update) | 10 ticks (0.5s) | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| 对话 1 (Interact) | Right-click NPC | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer` |
+| 对话 2 (Dialog) | Dialog GUI opens | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int` |
+| 伤害 (Damage) | NPC takes damage | `event: ScriptEventDamaged`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Killed | NPC dies | `event: ScriptEventKilled`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Attack | NPC melee or ranged attacks | `event: ScriptEventAttack`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Target | NPC acquires target | `event: ScriptEventTarget`, `world: ScriptWorld`, `npc: ScriptNpc` |
+| Collide | Entity collision | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `entity: ScriptEntity` |
+| Kills | NPC kills entity | `event: ScriptEvent`, `world: ScriptWorld`, `npc: ScriptNpc`, `target: ScriptLivingBase` |
+| Dialog Closed | Option selected or dialog closes | `event: ScriptEventDialog`, `world: ScriptWorld`, `npc: ScriptNpc`, `player: ScriptPlayer`, `dialog: int`, `option: int` |
 
 ## Cancelling Events
 
@@ -59,7 +39,7 @@ Subclasses inherit these and add their own methods:
 - `return false` does NOT cancel events — return values from scripts are ignored
 
 ```javascript
-// 1.7.x damage cancellation
+// old convention damage cancellation
 event.setCancelled(true);  // note double 'l'
 ```
 
@@ -68,7 +48,3 @@ event.setCancelled(true);  // note double 'l'
 The "Dialog Closed" slot fires when a player **selects a dialog option** AND when
 the dialog is **closed**. These two cases share the same sub-slot — use `event` fields
 to distinguish between them.
-
-## 1.7.x Note
-
-> For 1.8+, see `references/cur/events.md`. This file covers 1.7.x only.
