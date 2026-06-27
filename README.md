@@ -13,6 +13,15 @@ CNPC has a version-specific Java-backed API that cannot be guessed from general 
 - **Multi-variant support** — standard CustomNPCs, CustomNPC+ (1.7.10 fork), BetaZavr (1.12.2 unofficial fork), and Goodbird (1.19.2+ community port)
 - **Minecraft mapping lookups** — tools for resolving obfuscated Minecraft class/method/field names across versions
 
+## Prerequisites
+
+Before installing this skill, set up the following MCP servers:
+
+1. **[AI-MCP-NativeMinecraftAccess](https://github.com/SaltfishSheep/AI-MCP-NativeMinecraftAccess)** — provides obfuscated Minecraft class/method/field name lookups
+2. **[AI-MCP-CNPCAPIAccess](https://github.com/SaltfishSheep/AI-MCP-CNPCAPIAccess)** — provides CNPC JavaDoc API search and class hierarchy queries
+
+Refer to each repository's README for installation instructions.
+
 ## Project Structure
 
 ```
@@ -40,87 +49,16 @@ SKILL_CNPC_SCRIPTING/
 └── .gitignore
 ```
 
-## Installation
+## 
 
-### Prerequisites
+## Agent Capability Requirements
 
-- **Git 2.19+**
-- **Node.js ≥ 18**
+This skill requires your agent to support:
+- **File reading** — to load bundled reference files (`references/` directory)
+- **Web fetching** — to pull live JavaDoc pages for the user's target version (any URL fetch tool works)
+- **File writing** — to output `.js` script files (optional, scripts are usually pasted into the game UI)
 
-### Step 1: Install MCP Servers
-
-This skill requires two MCP servers to be installed and configured in your AI agent.
-
-**1. Native MC Mapping MCP** — Minecraft obfuscated name mapping lookups
-
-```bash
-git clone https://github.com/SaltfishSheep/AI-MCP-NativeMinecraftAccess.git
-cd AI-MCP-NativeMinecraftAccess
-npm install
-npm run build
-```
-
-**2. CNPC JavaDoc MCP** — CustomNPCs API method/field lookups
-
-```bash
-git clone https://github.com/SaltfishSheep/AI-MCP-CNPCAPIAccess.git
-cd AI-MCP-CNPCAPIAccess
-npm install
-npm run build
-```
-
-**Add to your MCP client configuration:**
-
-```json
-{
-  "mcpServers": {
-    "native-mc-access": {
-      "command": "node",
-      "args": ["/absolute/path/to/AI-MCP-NativeMinecraftAccess/dist/index.js"]
-    },
-    "cnpc-javadoc": {
-      "command": "node",
-      "args": ["/absolute/path/to/AI-MCP-CNPCAPIAccess/dist/index.js"]
-    }
-  }
-}
-```
-
-> Replace `/absolute/path/to/` with the actual paths where you cloned the repos.
-
-### Step 2: Install the Skill
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
-git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
-mkdir -p ~/.agents/skills
-rm -rf ~/.agents/skills/cnpc-scripting
-mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
-rm -rf .cnpc_skill_tmp
-```
-
-<details>
-<summary>Agent-specific paths</summary>
-
-**OpenCode:**
-```bash
-mkdir -p ~/.config/opencode/skills
-mv .cnpc_skill_tmp/cnpc-scripting ~/.config/opencode/skills/cnpc-scripting
-```
-
-**Claude Code:**
-```bash
-mkdir -p ~/.claude/skills
-mv .cnpc_skill_tmp/cnpc-scripting ~/.claude/skills/cnpc-scripting
-```
-
-**Codex:**
-```bash
-mkdir -p ~/.agents/skills
-mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
-```
-
-</details>
+No specific tool names are assumed — the skill adapts to whatever your environment provides.
 
 ## Version Routing
 
