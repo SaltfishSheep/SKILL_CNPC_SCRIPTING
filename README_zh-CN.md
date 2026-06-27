@@ -40,14 +40,87 @@ SKILL_CNPC_SCRIPTING/
 └── .gitignore
 ```
 
-## Agent 能力要求
+## 安装
 
-本 Skill 要求你的 agent 支持：
-- **文件读取** — 用于加载随附的参考文件（`references/` 目录）
-- **网页抓取** — 用于获取用户目标版本的实时 JavaDoc 页面（任何 URL 抓取工具均可）
-- **文件写入** — 用于输出 `.js` 脚本文件（可选，脚本通常直接粘贴到游戏 UI 中）
+### 前置要求
 
-不预设任何具体工具名称 — Skill 会适配你的环境所提供的任何工具。
+- **Git 2.19+**
+- **Node.js ≥ 18**
+
+### 第一步：安装 MCP 服务器
+
+本 Skill 需要两个 MCP 服务器才能正常工作。
+
+**1. Native MC Mapping MCP** — Minecraft 混淆名称映射查询
+
+```bash
+git clone https://github.com/SaltfishSheep/AI-MCP-NativeMinecraftAccess.git
+cd AI-MCP-NativeMinecraftAccess
+npm install
+npm run build
+```
+
+**2. CNPC JavaDoc MCP** — CustomNPCs API 方法/字段查询
+
+```bash
+git clone https://github.com/SaltfishSheep/AI-MCP-CNPCAPIAccess.git
+cd AI-MCP-CNPCAPIAccess
+npm install
+npm run build
+```
+
+**添加到 MCP 客户端配置：**
+
+```json
+{
+  "mcpServers": {
+    "native-mc-access": {
+      "command": "node",
+      "args": ["/absolute/path/to/AI-MCP-NativeMinecraftAccess/dist/index.js"]
+    },
+    "cnpc-javadoc": {
+      "command": "node",
+      "args": ["/absolute/path/to/AI-MCP-CNPCAPIAccess/dist/index.js"]
+    }
+  }
+}
+```
+
+> 将 `/absolute/path/to/` 替换为你实际克隆仓库的路径。
+
+### 第二步：安装 Skill
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/SaltfishSheep/SKILL_CNPC_SCRIPTING.git .cnpc_skill_tmp
+git -C .cnpc_skill_tmp sparse-checkout set cnpc-scripting
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/cnpc-scripting
+mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
+rm -rf .cnpc_skill_tmp
+```
+
+<details>
+<summary>特定工具专属路径</summary>
+
+**OpenCode:**
+```bash
+mkdir -p ~/.config/opencode/skills
+mv .cnpc_skill_tmp/cnpc-scripting ~/.config/opencode/skills/cnpc-scripting
+```
+
+**Claude Code:**
+```bash
+mkdir -p ~/.claude/skills
+mv .cnpc_skill_tmp/cnpc-scripting ~/.claude/skills/cnpc-scripting
+```
+
+**Codex:**
+```bash
+mkdir -p ~/.agents/skills
+mv .cnpc_skill_tmp/cnpc-scripting ~/.agents/skills/cnpc-scripting
+```
+
+</details>
 
 ## 版本路由
 
